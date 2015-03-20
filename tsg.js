@@ -159,6 +159,20 @@ function TSG(container, options) {
       
       return curr_date + " " + m_names[curr_month] + " " + curr_year;
     }
+
+    // Вспомогательная функция — суммирует данные из массивов points
+    self.sumPoints = function(a) {
+          var l = a.length, s;
+          if (l) {
+            var b = a[0].points.map(function(d,index) {
+              var s = 0;
+              for(var i = 0;i<l;i++) if (typeof a[i].points[index][2] !== undefined ) s += a[i].points[index][2];
+              return [d[0],0,s];
+            })
+            return b;
+          }
+    }
+  
 }
 
 
