@@ -1,0 +1,27 @@
+{
+  "name": "tsg",
+  "main": "tsg.js",
+  "version": "0.1.0",
+  "homepage": "https://github.com/ildarka/tsg",
+  "description": "D3 Graphic for InfluxDB",
+  "keywords": [
+    "influx",
+    "influxDB",
+    "D3",
+    "timeseries"
+  ],
+  "authors": [
+    "ildarka"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "d3": "~3.5.5"
+  }
+}
