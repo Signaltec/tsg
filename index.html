@@ -1,0 +1,139 @@
+<html>
+  <meta charset="utf-8">
+
+  <!-- External dependencies -->
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400&subset=cyrillic,latin' rel='stylesheet' type='text/css'>
+  <script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
+  <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+  <!-- TSG -->
+  <link href="tsg.css" rel="stylesheet">
+  <script src="tsg.js"></script>
+
+  <!-- Example style -->
+  <style>
+    html {width: 100%}
+    body {font: normal 14pt 'Open Sans', sans-serif; font-weight: lighter; margin:4em; width: 80%; height: 100%}
+    h1 {font-weight: lighter}
+
+  .graphic {
+    position:relative;
+    font-size:11px; 
+    font-weight: normal; 
+    border: none; 
+    width:100%; 
+    height:200px; 
+    overflow: hidden;
+    cursor: move;
+  }
+  </style>
+  
+<body>
+<h1>D3js simple graphic + InfluxDB</h1>
+
+  <div class="graphic single"></div>
+  <div class="graphic second"></div>
+  <div class="switchers"></div>
+  
+</body>
+
+  
+  <script>
+
+    // Simple line chart
+    g1 = new TSG('.single');
+    g1.influx('SELECT rx from 1h.port2, 1h.port1');
+
+    
+    // Manual load data
+    g2 = new TSG('.second');
+    var g2data = [];
+	  
+    var all = {'port1': {type:'input'}, 'port2': {type:'input'}, 'port3': {type:'output'}, 'port4': {type:'output'}};
+
+  d3.json("http://localhost:8086/db/mon/series?u=root&p=root&q=" + encodeURIComponent("SELECT rx from /^1h.port.*/"), function(err, data) {
+
+	    if (err) console.warn('ERROR REQUEST: ', query, err.response); else {
+          g2data = data;
+          console.log('--→',data);
+          
+			//g2.simple('.second', data);
+			g2.bind(g2data);
+			
+			
+
+          var el = document.querySelector('.switchers');
+
+          s = '<p><input type="checkbox" onClick="cheka_sum(this)"> суммарный</p><div style="float:left; width:400px">';
+          s += 'Входы: ';
+          [1,2].forEach(function(d) {
+              s += '<p><input type="checkbox" onClick="cheka(this, ' + d + ')" checked /> № '+ d + '</p>';
+          });
+
+          s += '</div><div style="float:left; width:200px">';
+          s += 'Выходы: ';
+          [3,4].forEach(function(d) {
+              s += '<p><input type="checkbox" onClick="cheka(this, ' + d + ')" checked /> № '+ d + '</p>';
+          });
+          s += '</div>';
+          $(el).append(s);
+
+        }
+    });
+    
+    window.onresize = function() { console.log('x'); g1.resize(); g2.resize();}
+
+  
+  var summarize = false;  
+
+   function redraw() {
+    var r = g2data.filter(function(d) { return !all[d.name] || all[d.name].disabled != true });
+
+    if (summarize) {
+
+          var inp = sum(r.filter(function(d) { return all[d.name] && all[d.name].type == 'input'; }));
+          var outp = sum(r.filter(function(d) { return all[d.name] && all[d.name].type == 'output'; }));
+          r = [];
+          if (inp) r.push({name: 'Вход', points: inp});
+          if (outp) r.push({name: 'Выход', points: outp});
+          g2.data = r;
+          console.log('sum --→', g2.data);
+
+    } else {
+      g2.data = r;
+    }
+    g2.update();
+
+  }
+    
+  function cheka(e, p) {
+    var name = 'port' + p;
+    all[name].disabled = !e.checked;
+
+    redraw();
+  }
+  
+  function cheka_sum(e) {
+    summarize = e.checked;
+    redraw();
+  }
+  
+ // Вспомогательная функция — суммирует данные из массивов points
+        function sum(a) {
+          var l = a.length, s;
+          if (l) {
+            var b = a[0].points.map(function(d,index) {
+              var s = 0;
+              for(var i = 0;i<l;i++) if (typeof a[i].points[index][2] !== undefined ) s += a[i].points[index][2];
+              return [d[0],0,s];
+            })
+            return b;
+          }
+        }
+    
+
+    
+  </script>
+
+
+</html>

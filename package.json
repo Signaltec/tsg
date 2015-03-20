@@ -1,0 +1,27 @@
+{
+  "name": "tsg",
+  "version": "0.1.0",
+  "description": "D3 graphic for InfluxDB",
+  "main": "tsg.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "influx": "^3.3.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ildarka/tsg.git"
+  },
+  "author": "ildarka",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ildarka/tsg/issues"
+  },
+  "homepage": "https://github.com/ildarka/tsg"
+}
