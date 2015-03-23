@@ -1,0 +1,444 @@
+<html>
+<!--  Русский, фиксед тик -->
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400&subset=cyrillic,latin' rel='stylesheet' type='text/css'>
+  
+  <style>
+    body {font: normal 16pt 'Open Sans', sans-serif; font-weight: lighter; padding:4em}
+    h1 {font-weight: lighter}
+    
+    
+   /* D3 */
+  .graphic {font-size:10px; font-weight: normal; border: solid 1px #ddd; width:100%; height:500px; overflow: hidden}  
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+
+  .x.axis path, .y.axis path {
+    display: none;
+  }
+
+  .line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1px; opacity: 0.7;
+  }
+    
+  .switchers {margin:1em 0}
+    
+  </style>  
+  
+  <script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
+  <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+  
+<body>
+<h1>InfluxDB + D3js ports graphics example</h1>
+</body>
+
+  <div class="graphic new">
+  
+  </div> 
+
+  <div class="graphic rule2">
+  
+  </div> 
+  
+  <div class="switchers">
+    
+  </div>  
+
+  <div class="graphic rule">
+  
+  </div> 
+
+  
+<script>
+
+/*
+  {
+    query: 'select rx from port*',
+    
+    value: 'rx'
+    
+  
+  }
+  
+  zoom: 'min','hour','day','month'
+  from:
+  to:
+  yAxis: 'Мбит/c'
+*/
+  
+  
+  
+  
+  
+  
+  
+  
+function MultilineRule() {
+
+var el = document.querySelector('.rule');
+
+var margin = {top: 20, right: 50, bottom: 30, left: 50}
+var width = el.offsetWidth - margin.left - margin.right;
+var height = el.offsetHeight - margin.top - margin.bottom;
+
+var parseDate = d3.time.format("%Y%m%d").parse;
+
+var x = d3.time.scale()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var line = d3.svg.line()
+    .interpolate("basis")
+    .x(function(d) { return x(d.date); })
+    .y(function(d) { return y(d.rx); });
+  
+d3.select(".rule svg").remove();
+var svg = d3.select(el).append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  data.forEach(function(port) {
+    port.points.forEach(function(d) {
+      d[0] = new Date(d[0]);
+    });  
+  });
+
+  if (summarize) {
+    
+    var inp = data[0].points.map(function(d,index) {
+      sum = 0;
+      inputs.forEach(function(i) {
+        if (disabled.indexOf(i) == -1) sum += +data[i-1].points[index][2];
+      });
+      return {date: d[0], rx: sum} 
+    });
+
+    var outp = data[0].points.map(function(d,index) {
+      sum = 0;
+      outputs.forEach(function(i) {
+        if (disabled.indexOf(i) == -1) sum += +data[i-1].points[index][2];
+      });
+      return {date: d[0], rx: sum}
+    });
+    
+    var ports = [{name: 'Вход', values: inp},{ name: 'Выход', values: outp}];
+      
+  } else {
+    var ports = data.map(function(p, index) {
+      if ( disabled.indexOf(index+1) == -1) {
+      return {
+        num: index + 1,
+        name: '№ '+ (index + 1),
+        values: p.points.map(function(d) {
+          return {date: d[0], rx: +d[2]};
+        })
+      }
+      }
+    });
+  }
+  
+  ports = ports.filter(function(d) {return d});
+
+  console.log('PORTS-', ports);  
+
+  x.domain(d3.extent(data[0].points, function(d) { return d[0]; }));
+
+  y.domain([
+    d3.min(ports, function(c) { return d3.min(c.values, function(v) { return v.rx; }); }),
+    d3.max(ports, function(c) { return d3.max(c.values, function(v) { return v.rx; }); })
+  ]);
+  
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+      .append("text")
+      .attr("x", 66)
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Мбит/с");
+
+  var port = svg.selectAll(".port")
+      .data(ports)
+      .enter().append("g")
+      .attr("class", "port");
+  
+  port.append("path")
+      .attr("class", "line")
+      .attr("d", function(d) { return line(d.values); })
+      .style("stroke", function(d, i) { 
+        if (!summarize) {
+          if (inputs.indexOf(d.num) !==-1) return '#0086e4'; else return '#14a909'; 
+        } else {
+          if (i == 0) return '#0086e4'; else return '#14a909'; 
+        }
+      });
+
+  port.append("text")
+      .datum(function(d) { return {name: d.name, value: d.values[0]}; })
+      .attr("transform", function(d) { return "translate(" + x(d.value.date) + "," + y(d.value.rx) + ")"; })
+      .attr("x", 3)
+      .attr("dy", ".35em")
+      .text(function(d) { return d.name; });
+
+}  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+function D3Graphic(container, yTitle) {
+    var _this = this;    
+
+    this.container = container;
+    this.yTitle = yTitle;
+    this.element = document.querySelector(container);
+  
+    var margin = {top: 20, right: 50, bottom: 30, left: 50};
+    
+    var witdh = this.element.offsetWidth - margin.left - margin.right;
+    var height = this.element.offsetHeight - margin.top - margin.bottom; 
+
+    // Resize container
+    this.resize = function() {
+      width = _this.element.offsetWidth - margin.left - margin.right;
+      height = _this.element.offsetHeight - margin.top - margin.bottom; 
+
+      _this.x = d3.time.scale().range([0, width]);
+      _this.y = d3.scale.linear().range([height, 0]);
+
+      _this.xAxis = d3.svg.axis().scale(_this.x).orient("bottom");
+      _this.yAxis = d3.svg.axis().scale(_this.y).orient("left");
+    }
+
+    // Clear container
+    this.clear = function() {
+      d3.select(this.container + " svg").remove();
+    }
+
+    // Append SVG
+    this.appendSvg = function() {
+      _this.svg = d3.select(_this.element).append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      
+      _this.xa = _this.svg.append("g")
+      .attr("class", "x axis");
+
+       _this.ya = _this.svg.append("g")
+      .attr("class", "y axis");
+      
+      _this.ya.append("text")
+      .attr("x", 66)
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text(_this.yTitle);
+    }
+
+
+    this.bind = function(data) {
+      _this.data = data;
+      
+      _this.inputs = _this.data.map(function(d) { if (d.type == 'input') return d.name; });
+      _this.outputs = _this.data.map(function(d) { if (d.type == 'output') return d.name; });
+
+      console.log('X', _this.data);
+    }
+
+    this.sum = function(a) {
+      var l = a.length, s;
+      if (l) {
+        var b = a[0].points.map(function(d,index) {
+          var s = 0;
+          for(var i=0;i<l;i++) if (typeof a[i].points[index][2] !== undefined ) s+=a[i].points[index][2];
+          return [d[0],0,s];
+        })
+        return b;
+      }
+    }
+    
+    // Draw
+    this.draw = function(mode) {
+      
+      switch(mode) {
+          case 'sum':
+            _this.color = function(name) { console.log(name); return (name == 'Вход') ? '#0086e4' : '#14a909'; }
+            break;
+          case 'rule':
+            _this.color = function(name) { return (_this.inputs.indexOf(name) != -1) ? '#0086e4' : '#14a909'; }
+            break;
+          
+          default:
+            _this.color = d3.scale.category10();
+            _this.color.domain(_this.data.map(function(d) { return d.name }));
+      }
+      
+      _this.x.domain( d3.extent(_this.data[0].points, function(d) { return d[0]; }));
+      _this.y.domain([
+        d3.min(_this.data, function(c) { return d3.min(c.points, function(v) { return v[2]; }); }),
+        d3.max(_this.data, function(c) { return d3.max(c.points, function(v) { return v[2]; }); })
+      ]);
+      
+      // Draw Axis
+      _this.xa.attr("transform", "translate(0," + height + ")").call(_this.xAxis);
+      _this.ya.call(_this.yAxis);
+      
+      // Line
+      var line = d3.svg.line()
+      .interpolate("basis")
+      .x(function(d) { return _this.x(d[0]); })
+      .y(function(d) { return _this.y(d[2]); });
+      
+      var filtered = _this.data.filter(function(d, index) { return d.disabled != true });
+      
+      if (mode == 'sum') {
+        var inp = _this.sum(filtered.filter(function(d) { return d.type == 'input'; }));
+        var outp = _this.sum(filtered.filter(function(d) { return d.type == 'output'; }));
+        // Count summ   
+        var filtered = [{name: 'Вход', points: inp},{ name: 'Выход', points: outp}];
+        console.log('$', filtered);
+        
+      }
+ 
+      var elem = _this.svg.selectAll(".line").data(filtered);
+      elem.enter().append("path").attr("class", "line");
+      elem.exit().remove();
+      elem.attr("d", function(d) { return line(d.points); })
+      .style("stroke", function(d) { return _this.color(d.name); });
+      
+      // Legend
+      var elem = _this.svg.selectAll(".legend").data(filtered);
+      elem.enter().append("text").attr("class", "legend");
+      elem.exit().remove();
+      elem.datum(function(d) { return {name: d.name, value: d.points[0]}; })
+      .attr("transform", function(d) { return "translate(" + _this.x(d.value[0]) + "," + _this.y(d.value[2]) + ")"; })
+      .attr("x", 3)
+      .attr("dy", ".35em")
+      .text(function(d) { return d.name.replace('port','№ '); });
+  }
+    
+    // Init
+    this.resize();
+    this.clear();
+    this.appendSvg();
+
+}
+  
+  
+  
+function cheka(e, p) {
+  if (!e.checked) disabled.push(p); else disabled = disabled.filter(function(d) {return d != p});
+  
+  data[p-1].disabled = !e.checked;
+  
+  console.log(p, e.checked, disabled);
+  
+  //d[3] = d[0];
+  //MultilineRule();
+  
+  g1.draw();
+  g2.draw('rule');
+}
+
+function cheka_sum(e) {
+
+  summarize = e.checked;
+  MultilineRule();
+  
+  if (e.checked) g2.draw('sum'); else g2.draw('rule');
+}  
+
+var summarize = false;
+var names;
+var disabled = [];
+var k;
+var data;
+  
+var inputs = [1,2];
+var outputs = [3,4];
+
+var g1 = new D3Graphic('.new', 'Мбит/с');
+var g2 = new D3Graphic('.rule2', 'Мбит/с');
+
+// Get data  
+$.post( "get/all", function( d ) {
+  data = d;
+  data.forEach(function(d, index) {d.type =  (index < data.length/2) ? 'input' : 'output'; });
+  
+  data[0].type = 'input';
+  data[1].type = 'input';
+  
+  console.log(data);
+  
+  var el = $('.switchers');
+
+  // Begin with data
+  names = data.map(function(d, index) { return '№ '+ (index + 1); });
+  var s = '';
+  
+  s += 'Входы: <input type="checkbox" onClick="cheka_sum(this)"> суммарный';
+  
+  inputs.forEach(function(d) {
+    s += '<p><input type="checkbox" onClick="cheka(this, ' + d + ')" checked /> № '+ d + '</p>';
+  });
+
+  s += 'Выходы: ';
+  
+  outputs.forEach(function(d) {
+    s += '<p><input type="checkbox" onClick="cheka(this, ' + d + ')" checked /> № '+ d + '</p>';
+  });
+  
+  el.append(s);
+  
+  MultilineRule();
+  
+
+  g1.bind(data);
+  g2.bind(data);
+  
+  g1.draw();
+  g2.draw('rule');
+  
+});
+  
+
+
+</script>  
+
+  
+</html>

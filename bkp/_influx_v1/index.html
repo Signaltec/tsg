@@ -1,0 +1,144 @@
+<html>
+<!--  Русский, фиксед тик -->
+  <meta charset="utf-8">
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400&subset=cyrillic,latin' rel='stylesheet' type='text/css'>
+
+  <style>
+    body {font: normal 14pt 'Open Sans', sans-serif; font-weight: lighter; padding:4em}
+    h1 {font-weight: lighter}
+
+    .switchers {margin:1em 0}
+  </style>
+
+  <script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
+  <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+
+  <link href='d3influx.css' rel='stylesheet' type='text/css'>
+<body>
+<h1>InfluxDB + D3js ports graphics example</h1>
+</body>
+
+  <div class="graphic single">    
+  </div>
+
+  <div class="switchers">
+
+  </div>
+
+  <div class="graphic rule">
+
+  </div>
+
+
+<script src="d3influx.js"></script>
+
+<script>
+
+function cheka(e, p) {
+  var name = 'port' + p;
+  all[name].disabled = !e.checked;
+
+  g1.update();
+  g2.update();
+}
+
+function cheka_sum(e) {
+  all['summarize'] = e.checked;
+  g2.update();
+}
+
+
+// Example usage D3Influx ---------------------------
+
+var all = {'port1': {type:'input'}, 'port2': {type:'input'}, 'port3': {type:'output'}, 'port4': {type:'output'}};
+
+var el = document.querySelector('.switchers');
+
+s = '<div style="float:left; width:400px">';
+s += 'Входы: <input type="checkbox" onClick="cheka_sum(this)"> суммарный';
+[1,2].forEach(function(d) {
+    s += '<p><input type="checkbox" onClick="cheka(this, ' + d + ')" checked /> № '+ d + '</p>';
+});
+
+s += '</div><div style="float:left; width:200px">';
+s += 'Выходы: ';
+[3,4].forEach(function(d) {
+    s += '<p><input type="checkbox" onClick="cheka(this, ' + d + ')" checked /> № '+ d + '</p>';
+});
+s += '</div>';
+$(el).append(s);
+
+
+/*
+  Сложный вариант графика в котором есть фильтрация портов.
+  Внешнее воздействие передается через объекс all
+*/
+var g1 = new D3Influx('.single', {
+      "db": "http://localhost:8086/db/mon/series?u=root&p=root",
+      "query": "SELECT rx from /^#port.*/",
+      "var": "rx", // Пока не действует
+      "type": "line",
+      "min": 0,
+      "title": "Порты",
+      "yAxisUnits": "Мбит/с",
+      "filter": function(data) {
+        // Пропускает только те, у которых в внешнем массиве all не стоит флаг disabled
+        return data.filter(function(d) { return !all[d.name] || all[d.name].disabled != true });
+      }
+});
+
+
+/*
+  Сложный вариант графика в котором есть фильтрация портов и агрегация по входу/выходу для правила.
+  Переопределена функция color в зависимости от типа порта (input/output).
+  Внешнее воздействие передается через объекс all.
+*/
+var g2 = new D3Influx('.rule', {
+      "db": "http://localhost:8086/db/mon/series?u=root&p=root",
+      "query": "SELECT rx from /^#port.*/",
+      "var": "rx", // Пока не действует
+      "type": "line",
+      "min": 0,
+      "title": "Порты",
+      "yAxisUnits": "Мбит/с",
+      "color": function(name) {
+        return (name == 'Вход' || (all[name] && all[name].type == 'input')) ? '#0086e4' : '#14a909';
+      },
+      "filter": function(data) {
+         return data.filter(function(d) { return !all[d.name] || all[d.name].disabled != true });
+      },
+      "aggregate": function(data) {
+
+        // Вспомогательная функция — суммирует данные из массивов points
+        function sum(a) {
+          var l = a.length, s;
+          if (l) {
+            var b = a[0].points.map(function(d,index) {
+              var s = 0;
+              for(var i = 0;i<l;i++) if (typeof a[i].points[index][2] !== undefined ) s += a[i].points[index][2];
+              return [d[0],0,s];
+            })
+            return b;
+          }
+        }
+
+        // Суммирует данные по входным и выходным портам и выводит 2 графика
+        if (all['summarize']) {
+          var inp = sum(data.filter(function(d) { return all[d.name] && all[d.name].type == 'input'; }));
+          var outp = sum(data.filter(function(d) { return all[d.name] && all[d.name].type == 'output'; }));
+          var r = [];
+          if (inp) r.push({name: 'Вход', points: inp});
+          if (outp) r.push({name: 'Выход', points: outp});
+          return r;
+        } else {
+          return data;
+        }
+      }
+});
+
+
+</script>
+
+
+</html>

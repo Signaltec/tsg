@@ -1,15 +1,8 @@
 function TSG(container, options) {
     var self = this;
- 	
-    self.options = {
-      influx: 'http://localhost:8086/db/mon/series?u=root&p=root',
-      margin: {top: 20, right: 50, bottom: 30, left: 50}
-    };
-	    
+ 		    
 	var width, height;
-  
-    self.color = d3.scale.category10();
-    
+      
     var line = d3.svg.line()
       //.interpolate("basis")
       .x(function(d) { return self.x(d[0]); })
@@ -35,6 +28,33 @@ function TSG(container, options) {
       ["%Y", function() { return true; }]
     ]);
   
+    // Init options
+    self.options = {
+      influx:  {
+        host: window.location.protocol + '//' + window.location.host,
+        db: 'mon',
+        user: 'root',
+        password: 'root'
+      },      
+      margin: {top: 20, right: 50, bottom: 30, left: 50}
+    };
+  
+    for (key in options) self.options[key] = options[key] || self.options[key];
+  
+    
+    if (!self.options.connect) {
+      if (window.location.host == '') 
+        self.options.connect = 'http://localhost:8086/db/' + self.options.influx.db + '/series?u=' + self.options.influx.user + '&p=' + self.options.influx.password;
+      else
+        self.options.connect = self.options.influx.host + ':8086/db/' + self.options.influx.db + '/series?u=' + self.options.influx.user + '&p=' + self.options.influx.password;
+    }
+  	_append(container);
+
+    // ..................................................
+  
+    // Default color function
+    self.color = d3.scale.category10();
+  
     // Clear prefix of continuous query like "1h.","1d."…
     self._cleanNames = function(data) {
         return data.map(function(d) { 
@@ -43,10 +63,8 @@ function TSG(container, options) {
         });
     }
     
-    // Init
-    self._init = function(container, options) {
-
-      for (key in options) self.options[key] = options[key] || self.options[key];
+    // Append svg element & init container
+    function _append(container) {
 
       self.element = document.querySelector(container);
     
@@ -97,22 +115,11 @@ function TSG(container, options) {
         zoom.x(self.x).y(self.y);
     }
     
-    // Update draw
-    self.update = function() {
-      
-        // Elements
-        var elem = self.svg.select('g').selectAll(".line").data(self.data);
-
-        elem.enter().append("path").attr("class", "line")
-        elem.exit().remove();
-        
-        elem.attr("d", function(d) { return line(d.points); })
-        .style("stroke", function(d) { return self.color(d.name); });
-    }
     
-    // Query influxDB
-    self._query = function(query) {
-      d3.json([self.options.influx, '&q=', encodeURIComponent(query)].join(''), function(err, data) {
+
+    // TSG API: Query influxDB & draw graphic
+    self.influx = function(query) {
+      d3.json([self.options.connect, '&q=', encodeURIComponent(query)].join(''), function(err, data) {
         
         if (err) console.warn('ERROR REQUEST: ', query, err.response); else {
           
@@ -121,17 +128,8 @@ function TSG(container, options) {
         }
       });
     }
-    
-	// Constructor body
-	self._init(container, options);
-
-    // TSG API
-    self.influx = function(query) {
-      //self._init(container, options);
-      self._query(query);
-    }
 	
-    // Bind data
+    // TSG API: Bind data
     self.bind = function(data) {
 
       data = self._cleanNames(data);
@@ -145,6 +143,25 @@ function TSG(container, options) {
         }
     }
     
+    // TSG API: Update draw
+    self.update = function() {
+      
+        // Elements
+        var elem = self.svg.select('g').selectAll(".line").data(self.data);
+
+        elem.enter().append("path").attr("class", "line")
+        elem.exit().remove();
+        
+        elem.attr("d", function(d) { return line(d.points); })
+        .style("stroke", function(d) { return self.color(d.name); });
+    }
+    
+    // TSG API: Clear graphic
+    self.clear = function() {
+      self.data = [{ name: '', points: [[0,0,0]]}];
+      self.update();
+    }
+
     
     // Вспомогательная функция форматирования даты
     function format(d) {
