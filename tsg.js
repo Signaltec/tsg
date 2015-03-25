@@ -67,6 +67,9 @@ function TSG(container, options) {
     function _append(container) {
 
       self.element = document.querySelector(container);
+      
+      // Clear
+      d3.select(container).select('svg').remove();
     
       // Append SVG
       self.svg = d3.select(container)
