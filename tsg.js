@@ -29,6 +29,9 @@ function TSG(container, options) {
     ]);
   
     // Init options
+  
+    self.colorDomain = null;
+  
     self.options = {
       influx:  {
         host: window.location.protocol + '//' + window.location.host,
@@ -105,7 +108,7 @@ function TSG(container, options) {
         var yMax = (typeof self.options.max !== 'undefined') ? self.options.max : d3.max(self.data, function(c) { return d3.max(c.points, function(v) { return v[2]; }); });
         self.y.domain([yMin, yMax]);
 
-        self.color.domain(self.data.map(function(d) { return d.name }));
+        self.color.domain(self.colorDomain || self.data.map(function(d) { return d.name }));
       
         // Draw axis
         self.xAxis = d3.svg.axis().scale(self.x).orient("bottom").tickFormat(customTimeFormat).ticks(width/80);
