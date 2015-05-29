@@ -43,7 +43,6 @@ function TSG(container, options) {
     };
   
     for (key in options) self.options[key] = options[key] || self.options[key];
-  
     
     if (!self.options.connect) {
       if (window.location.host == '') 
@@ -117,6 +116,9 @@ function TSG(container, options) {
         self.xa.attr("transform", "translate(0," + height + ")").call(self.xAxis);
         self.ya.call(self.yAxis);
       
+        if (self.options.title) {
+          self.ya.append("text").attr("y", 0).attr("x", 7).text(self.options.title);
+        }
         // Bind zoom
         zoom.x(self.x).y(self.y);
     }
