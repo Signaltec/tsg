@@ -44,6 +44,9 @@ function TSG(container, options) {
   
     for (key in options) self.options[key] = options[key] || self.options[key];
     
+    if (self.options.title) self.title = self.options.title;
+  
+  
     if (!self.options.connect) {
       if (window.location.host == '') 
         self.options.connect = 'http://localhost:8086/db/' + self.options.influx.db + '/series?u=' + self.options.influx.user + '&p=' + self.options.influx.password;
@@ -85,6 +88,7 @@ function TSG(container, options) {
 
       self.xa = svg.append("g").attr("class", "x axis");
       self.ya = svg.append("g").attr("class", "y axis");
+      self.t_title = self.ya.append("text").attr("y", 0).attr("x", 7);
     }
   
     self.resize = function() {
@@ -116,9 +120,10 @@ function TSG(container, options) {
         self.xa.attr("transform", "translate(0," + height + ")").call(self.xAxis);
         self.ya.call(self.yAxis);
       
-        if (self.options.title) {
-          self.ya.append("text").attr("y", 0).attr("x", 7).text(self.options.title);
+        if (self.title) {
+          self.t_title.text(self.title);
         }
+      
         // Bind zoom
         zoom.x(self.x).y(self.y);
     }
