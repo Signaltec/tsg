@@ -43,7 +43,7 @@
   <script>
 
     // Simple line chart
-    g1 = new TSG('.single');
+    g1 = new TSG('.single', {margin: {top: 20, right: 50, bottom: 30, left: 140}});
     g1.influx('SELECT rx from 1h.port2, 1h.port1');
 
     
