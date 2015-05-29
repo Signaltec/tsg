@@ -37,7 +37,7 @@ function TSG(container, options) {
         host: window.location.protocol + '//' + window.location.host,
         db: 'mon',
         user: 'root',
-        password: 'root'
+        password: 'pussy-root'
       },      
       margin: {top: 20, right: 50, bottom: 30, left: 50}
     };
