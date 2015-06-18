@@ -5,8 +5,9 @@ function TSG(container, options) {
       
     var line = d3.svg.line()
       //.interpolate("basis")
-      .x(function(d) { return self.x(d[0] || 0); })
-      .y(function(d) { return self.y(d[2] || 0); });
+      .x(function(d) { return (d && typeof d[0] !== 'undefined' && self.x) ? self.x(d[0]) : 0; })
+      .y(function(d) { return (d && typeof d[2] !== 'undefined' && self.y) ? self.y(d[2]) : 0; });
+
   
     // Zoom behavior
     var zoom = d3.behavior.zoom().scaleExtent([1, 20]).on("zoom", zoomed);
@@ -36,17 +37,21 @@ function TSG(container, options) {
       
 
         var button = document.querySelector(container + ' .zoom_out');
-        if (scale_min <= zoom.scaleExtent()[0]) { 
-          button.setAttribute('disabled','true');
-        } else {
-          button.removeAttribute('disabled');
+        if (button) {
+          if (scale_min <= zoom.scaleExtent()[0]) { 
+            button.setAttribute('disabled','true');
+          } else {
+            button.removeAttribute('disabled');
+          }
         }
 
         var button = document.querySelector(container + ' .zoom_in');
-        if (scale_max >= zoom.scaleExtent()[1]) { 
-          button.setAttribute('disabled','true');
-        } else {
-          button.removeAttribute('disabled');
+        if (button) {
+          if (scale_max >= zoom.scaleExtent()[1]) { 
+            button.setAttribute('disabled','true');
+          } else {
+            button.removeAttribute('disabled');
+          }
         }
     }
   
