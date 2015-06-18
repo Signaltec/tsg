@@ -65,6 +65,8 @@ function TSG(container, options) {
     ]);
   
     // Init options
+    self.xAxis = function() {};
+    self.yAxis = function() {};
   
     self.colorDomain = null;
   
