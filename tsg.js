@@ -5,8 +5,8 @@ function TSG(container, options) {
       
     var line = d3.svg.line()
       //.interpolate("basis")
-      .x(function(d) { return self.x(d[0]); })
-      .y(function(d) { return self.y(d[2]); });
+      .x(function(d) { return self.x(d[0] || 0); })
+      .y(function(d) { return self.y(d[2] || 0); });
   
     // Zoom behavior
     var zoom = d3.behavior.zoom().scaleExtent([1, 20]).on("zoom", zoomed);
@@ -249,7 +249,7 @@ function TSG(container, options) {
         action = 'out';
       }
       
-      if (action === '') { return false; }
+      if (action === '' || !center) { return false; }
       
       var scale = zoom.scale();
       var extent = zoom.scaleExtent();
