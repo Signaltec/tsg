@@ -38,7 +38,7 @@ function TSG(container, options) {
 
         var button = document.querySelector(container + ' .zoom_out');
         if (button) {
-          if (scale_min <= zoom.scaleExtent()[0]) { 
+          if (zoom.scale() <= zoom.scaleExtent()[0]) { 
             button.setAttribute('disabled','true');
           } else {
             button.removeAttribute('disabled');
@@ -47,7 +47,7 @@ function TSG(container, options) {
 
         var button = document.querySelector(container + ' .zoom_in');
         if (button) {
-          if (scale_max >= zoom.scaleExtent()[1]) { 
+          if (zoom.scale() >= zoom.scaleExtent()[1]) { 
             button.setAttribute('disabled','true');
           } else {
             button.removeAttribute('disabled');
@@ -272,7 +272,7 @@ function TSG(container, options) {
           factor = target_scale / scale;
       }
 
-     if (target_scale <= extent[0] || target_scale >= extent[1]) {
+     if (target_scale < extent[0] || target_scale > extent[1]) {
        checkButtons(target_scale);
        return false;
      }
@@ -295,7 +295,7 @@ function TSG(container, options) {
       
     });
 
-    
+    checkButtons()
 }
 
 
