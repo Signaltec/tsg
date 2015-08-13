@@ -8,7 +8,11 @@ function TSG(container, options) {
       .x(function(d) { return (d && typeof d[0] !== 'undefined' && self.x) ? self.x(d[0]) : 0; })
       .y(function(d) { return (d && typeof d[2] !== 'undefined' && self.y) ? self.y(d[2]) : 0; });
 
-  
+    var zero_line = d3.svg.line()
+      //.interpolate("basis")
+      .x(function(d) { return  (d && typeof d !== 'undefined' && self.x) ? self.x(+d) : 0;})
+      .y(function(d) { return (d && self.y) ? self.y(0) : 0; });
+
     // Zoom behavior
     var zoom = d3.behavior.zoom().scaleExtent([1, 20]).on("zoom", zoomed);
   
@@ -22,6 +26,7 @@ function TSG(container, options) {
 			//console.log(d); 
 			return line(d.points); 
 		});
+        self.svg.selectAll(".zline").attr("d", zero_line(self.x.domain()));
     }
   
     // Disable/enable zoom buttons
@@ -63,7 +68,11 @@ function TSG(container, options) {
       ["%B", function(d) { return d.getMonth(); }],
       ["%Y", function() { return true; }]
     ]);
-  
+    
+    function customNumFormat (val){
+      return d3.format(".7f")(Math.abs(val)).toString().replace(/0+$/,'')
+    }
+
     // Init options
     self.xAxis = function() {};
     self.yAxis = function() {};
@@ -128,6 +137,8 @@ function TSG(container, options) {
       self.xa = svg.append("g").attr("class", "x axis");
       self.ya = svg.append("g").attr("class", "y axis");
       self.t_title = self.ya.append("text").attr("y", 0).attr("x", 7);
+      self.zline = svg.append("path").attr("class", "zline")
+      .style("stroke", "black").style("stroke-dasharray", [4,3]);
     }
   
     self.resize = function() {
@@ -155,7 +166,7 @@ function TSG(container, options) {
       
         // Draw axis
         self.xAxis = d3.svg.axis().scale(self.x).orient("bottom").tickFormat(customTimeFormat).ticks(width/80);
-        self.yAxis = d3.svg.axis().scale(self.y).orient("left").ticks(height/30);
+        self.yAxis = d3.svg.axis().scale(self.y).orient("left").tickFormat(customNumFormat).ticks(height/30);
 
         self.xa.attr("transform", "translate(0," + height + ")").call(self.xAxis);
         self.ya.call(self.yAxis);
@@ -198,7 +209,8 @@ function TSG(container, options) {
     
     // TSG API: Update draw
     self.update = function() {
-      
+        if (self.x) self.svg.select('g').selectAll(".zline").attr("d", zero_line(self.x.domain()))
+        
         // Elements
         var elem = self.svg.select('g').selectAll(".line").data(self.data);
 
