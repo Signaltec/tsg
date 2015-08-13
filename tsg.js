@@ -1,13 +1,12 @@
 function TSG(container, options) {
-  var self = this;
- 	var zoom_scale_factor = 1.4;
+    var self = this;
+ 	var zoom_scale_factor = 1.4;	    
 	var width, height, center;
-
+      
     var line = d3.svg.line()
       //.interpolate("basis")
       .x(function(d) { return (d && typeof d[0] !== 'undefined' && self.x) ? self.x(d[0]) : 0; })
       .y(function(d) { return (d && typeof d[2] !== 'undefined' && self.y) ? self.y(d[2]) : 0; });
-
 
     var zero_line = d3.svg.line()
       //.interpolate("basis")
@@ -16,20 +15,20 @@ function TSG(container, options) {
 
     // Zoom behavior
     var zoom = d3.behavior.zoom().scaleExtent([1, 20]).on("zoom", zoomed);
-
+  
     function zoomed() {
         //console.log('zoomed', d3.event.translate, d3.event.scale);
         checkButtons();
-
+      
         self.svg.select(".x.axis").call(self.xAxis);
         self.svg.select(".y.axis").call(self.yAxis);
-        self.svg.selectAll(".line").attr("d", function(d) {
-    			//console.log(d);
-    			return line(d.points);
-    		});
+        self.svg.selectAll(".line").attr("d", function(d) { 
+			//console.log(d); 
+			return line(d.points); 
+		});
         self.svg.selectAll(".zline").attr("d", zero_line(self.x.domain()));
     }
-
+  
     // Disable/enable zoom buttons
     function checkButtons(scaleForce) {
         var scale_min, scale_max;
@@ -40,11 +39,11 @@ function TSG(container, options) {
           scale_min = zoom.scale() * 1/zoom_scale_factor;
           scale_max = zoom.scale() * zoom_scale_factor;
         }
-
+      
 
         var button = document.querySelector(container + ' .zoom_out');
         if (button) {
-          if (zoom.scale() <= zoom.scaleExtent()[0]) {
+          if (zoom.scale() <= zoom.scaleExtent()[0]) { 
             button.setAttribute('disabled','true');
           } else {
             button.removeAttribute('disabled');
@@ -53,14 +52,14 @@ function TSG(container, options) {
 
         var button = document.querySelector(container + ' .zoom_in');
         if (button) {
-          if (zoom.scale() >= zoom.scaleExtent()[1]) {
+          if (zoom.scale() >= zoom.scaleExtent()[1]) { 
             button.setAttribute('disabled','true');
           } else {
             button.removeAttribute('disabled');
           }
         }
     }
-
+  
     // Custom tickFormat
     var customTimeFormat = d3.time.format.multi([
       ["%H:%M", function(d) { return d.getMinutes(); }],
@@ -69,33 +68,34 @@ function TSG(container, options) {
       ["%B", function(d) { return d.getMonth(); }],
       ["%Y", function() { return true; }]
     ]);
-
+    
     function customNumFormat (val){
       return d3.format(".7f")(Math.abs(val)).toString().replace(/0+$/,'')
     }
+
     // Init options
     self.xAxis = function() {};
     self.yAxis = function() {};
-
+  
     self.colorDomain = null;
-
+  
     self.options = {
       influx:  {
         host: window.location.protocol + '//' + window.location.host,
         db: 'mon',
         user: 'root',
         password: 'pussy-root'
-      },
+      },      
       margin: {top: 20, right: 50, bottom: 30, left: 50}
     };
-
+  
     for (key in options) self.options[key] = options[key] || self.options[key];
-
+    
     if (self.options.title) self.title = self.options.title;
-
-
+  
+  
     if (!self.options.connect) {
-      if (window.location.host == '')
+      if (window.location.host == '') 
         self.options.connect = 'http://localhost:8086/db/' + self.options.influx.db + '/series?u=' + self.options.influx.user + '&p=' + self.options.influx.password;
       else
         self.options.connect = self.options.influx.host + ':8086/db/' + self.options.influx.db + '/series?u=' + self.options.influx.user + '&p=' + self.options.influx.password;
@@ -103,34 +103,34 @@ function TSG(container, options) {
   	_append(container);
 
     // ..................................................
-
+  
     // Default color function
     self.color = d3.scale.category10();
-
+  
     // Clear prefix of continuous query like "1h.","1d."…
     self._cleanNames = function(data) {
-        return data.map(function(d) {
+        return data.map(function(d) { 
           d.name = d.name.replace(/.*\./,'')
           return d;
         });
     }
-
+    
     // Append svg element & init container
     function _append(container) {
 
       self.element = document.querySelector(container);
-
+      
       // Remove svg
       d3.select(container).select('svg').remove();
-
+    
       // Append SVG
-      self.svg = d3.select(container, self.options.mode)
+      self.svg = d3.select(container)
         .call(zoom)
         .on("wheel.zoom", null).on("mousewheel.zoom", null).on("dblclick.zoom", null).on("DOMMouseScroll.zoom", null)
         .append("svg")
         .attr("width", self.element.offsetWidth)
         .attr("height", self.element.offsetHeight);
-
+      
       var svg = self.svg.append("g")
         .attr("transform", "translate(" + self.options.margin.left + "," + self.options.margin.top + ")");
 
@@ -140,7 +140,7 @@ function TSG(container, options) {
       self.zline = svg.append("path").attr("class", "zline")
       .style("stroke", "black").style("stroke-dasharray", [4,3]);
     }
-
+  
     self.resize = function() {
         self.svg
         .attr("width", self.element.offsetWidth)
@@ -150,55 +150,55 @@ function TSG(container, options) {
         width = self.element.offsetWidth - self.options.margin.left - self.options.margin.right;
         height = self.element.offsetHeight - self.options.margin.top - self.options.margin.bottom;
         center = [width / 2, height / 2];
-
+      
         self.x = d3.time.scale().range([0, width]);
         self.y = d3.scale.linear().range([height, 0]);
-
+            
         // Domains
         var t = d3.extent(self.data[0].points, function(d) { return d[0]; });
         self.x.domain(t);
-
+              
         var yMin = (typeof self.options.min !== 'undefined') ? self.options.min : d3.min(self.data, function(c) { return d3.min(c.points, function(v) { return v[2]; }); });
         var yMax = (typeof self.options.max !== 'undefined') ? self.options.max : d3.max(self.data, function(c) { return d3.max(c.points, function(v) { return v[2]; }); });
         self.y.domain([yMin, yMax]);
 
         self.color.domain(self.colorDomain || self.data.map(function(d) { return d.name }));
-
+      
         // Draw axis
         self.xAxis = d3.svg.axis().scale(self.x).orient("bottom").tickFormat(customTimeFormat).ticks(width/80);
         self.yAxis = d3.svg.axis().scale(self.y).orient("left").tickFormat(customNumFormat).ticks(height/30);
 
         self.xa.attr("transform", "translate(0," + height + ")").call(self.xAxis);
         self.ya.call(self.yAxis);
-
+      
         if (self.title) {
           self.t_title.text(self.title);
         }
-
+      
         // Bind zoom
         zoom.x(self.x).y(self.y);
     }
-
-
+    
+    
 
     // TSG API: Query influxDB & draw graphic
     self.influx = function(query) {
       d3.json([self.options.connect, '&q=', encodeURIComponent(query)].join(''), function(err, data) {
-
+        
         if (err) console.warn('ERROR REQUEST: ', query, err.response); else {
-
+          
           self.bind(data);
 
         }
       });
     }
-
+	
     // TSG API: Bind data
     self.bind = function(data) {
 
       data = self._cleanNames(data);
       self.data = data;
-
+      
 		if (data.length) {
             self.resize();
             self.update();
@@ -206,41 +206,39 @@ function TSG(container, options) {
             console.warn('Empty data');
         }
     }
-
+    
     // TSG API: Update draw
     self.update = function() {
-        if (self.x) {
-          self.svg.select('g').selectAll(".zline").attr("d", zero_line(self.x.domain()))
-        }
-
+        if (self.x) self.svg.select('g').selectAll(".zline").attr("d", zero_line(self.x.domain()))
+        
         // Elements
         var elem = self.svg.select('g').selectAll(".line").data(self.data);
 
         elem.enter().append("path").attr("class", "line")
         elem.exit().remove();
-
+        
         elem.attr("d", function(d) { return line(d.points); })
         .style("stroke", function(d) { return self.color(d.name); });
     }
-
+    
     // TSG API: Clear graphic
     self.clear = function() {
       self.data = [{ name: '', points: [[0,0,0]]}];
       self.update();
     }
 
-
+    
     // Вспомогательная функция форматирования даты
     function format(d) {
-      var m_names = new Array("January", "February", "March",
-      "April", "May", "June", "July", "August", "September",
+      var m_names = new Array("January", "February", "March", 
+      "April", "May", "June", "July", "August", "September", 
       "October", "November", "December");
 
       d = new Date(d)
       var curr_date = d.getDate();
       var curr_month = d.getMonth();
       var curr_year = d.getFullYear();
-
+      
       return curr_date + " " + m_names[curr_month] + " " + curr_year;
     }
 
@@ -256,29 +254,29 @@ function TSG(container, options) {
             return b;
           }
     }
-
+    
     // Масштабирование кнопками
     d3.selectAll(container + ' button').on('click', function() {
       d3.event.preventDefault();
 
       var action = '';
-      if (this.className.indexOf('zoom_in') != -1) {
+      if (this.className.indexOf('zoom_in') != -1) { 
         action = 'in';
       }
-
+      
       if (this.className.indexOf('zoom_out') != -1) {
         action = 'out';
       }
-
+      
       if (action === '' || !center) { return false; }
-
+      
       var scale = zoom.scale();
       var extent = zoom.scaleExtent();
       var translate = zoom.translate();
       var x = translate[0], y = translate[1];
       var factor = (action === 'in') ? zoom_scale_factor : 1/zoom_scale_factor;
       var target_scale = scale * factor;
-
+      
       // If the factor is too much, scale it down to reach the extent exactly
       var clamped_target_scale = Math.max(extent[0], Math.min(extent[1], target_scale));
       if (clamped_target_scale != target_scale){
@@ -304,9 +302,9 @@ function TSG(container, options) {
               zoomed();
           };
       });
-
+  
       //console.log('zoom', action, scale);
-
+      
     });
 
     checkButtons()
