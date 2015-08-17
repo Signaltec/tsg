@@ -3,13 +3,13 @@ function TSG(container, options) {
  	var zoom_scale_factor = 1.4;	    
 	var width, height, center;
       
-    var createLine = function(i){
+    var createLine = function(i) {
       var iterator = i;
       var line = d3.svg.line()
         //.interpolate("basis")
         .x(function(d) { return (d && typeof d[0] !== 'undefined' && self.x) ? self.x(d[0]) : 0; })
         .y(function(d) { return (d && typeof d[iterator] !== 'undefined' && self.y) ? self.y(d[iterator]) : 0; });
-      return line
+      return line;
     }
 
     var zero_line = d3.svg.line()
@@ -26,9 +26,9 @@ function TSG(container, options) {
       
         self.svg.select(".x.axis").call(self.xAxis);
         self.svg.select(".y.axis").call(self.yAxis);
-        for (var i = 2; i < (self.data && d3.max(self.data, function(c) { return c.points[0].length})); i++)  {
-          var line = createLine(i)
-          self.svg.selectAll(".line#n" + i).attr("d", function(d) { return (d.points[0][i]) ? line(d.points) : null; })
+        for (var i = 2; i < (self.data && d3.max(self.data, function(c) { return c.points[0].length})); i++) {
+          var line = createLine(i);
+          self.svg.selectAll(".line#n" + i).attr("d", function(d) { return (d.points[0][i]) ? line(d.points) : null; });
         }
         self.svg.selectAll(".zline").attr("d", zero_line(self.x.domain()));
     }
@@ -221,7 +221,7 @@ function TSG(container, options) {
           var elem = self.svg.select('g').selectAll(".line#n" + i).data(self.data);
           elem.enter().append("path").attr("class", "line").attr("id",'n'+i);
           elem.exit().remove();
-          var line = createLine(i)
+          var line = createLine(i);
           elem.attr("d", function(d) { return (d.points[0][i]) ? line(d.points) : null; })
           elem.style("stroke", function(d) { return self.color(d.name); });
         }
@@ -229,7 +229,7 @@ function TSG(container, options) {
     
     // TSG API: Clear graphic
     self.clear = function() {
-      self.svg.select('g').selectAll(".line").attr("d", function(d){return null})
+      self.svg.select('g').selectAll(".line").attr("d", function(d) { return null; });
     }
 
     
