@@ -3,10 +3,14 @@ function TSG(container, options) {
  	var zoom_scale_factor = 1.4;	    
 	var width, height, center;
       
-    var line = d3.svg.line()
-      //.interpolate("basis")
-      .x(function(d) { return (d && typeof d[0] !== 'undefined' && self.x) ? self.x(d[0]) : 0; })
-      .y(function(d) { return (d && typeof d[2] !== 'undefined' && self.y) ? self.y(d[2]) : 0; });
+    var createLine = function(i){
+      var iterator = i;
+      var line = d3.svg.line()
+        //.interpolate("basis")
+        .x(function(d) { return (d && typeof d[0] !== 'undefined' && self.x) ? self.x(d[0]) : 0; })
+        .y(function(d) { return (d && typeof d[iterator] !== 'undefined' && self.y) ? self.y(d[iterator]) : 0; });
+      return line
+    }
 
     var zero_line = d3.svg.line()
       //.interpolate("basis")
@@ -22,10 +26,10 @@ function TSG(container, options) {
       
         self.svg.select(".x.axis").call(self.xAxis);
         self.svg.select(".y.axis").call(self.yAxis);
-        self.svg.selectAll(".line").attr("d", function(d) { 
-			//console.log(d); 
-			return line(d.points); 
-		});
+        for (var i = 2; i < (self.data && d3.max(self.data, function(c) { return c.points[0].length})); i++)  {
+          var line = createLine(i)
+          self.svg.selectAll(".line#n" + i).attr("d", function(d) { return line(d.points); })
+        }
         self.svg.selectAll(".zline").attr("d", zero_line(self.x.domain()));
     }
   
@@ -158,8 +162,8 @@ function TSG(container, options) {
         var t = d3.extent(self.data[0].points, function(d) { return d[0]; });
         self.x.domain(t);
               
-        var yMin = (typeof self.options.min !== 'undefined') ? self.options.min : d3.min(self.data, function(c) { return d3.min(c.points, function(v) { return v[2]; }); });
-        var yMax = (typeof self.options.max !== 'undefined') ? self.options.max : d3.max(self.data, function(c) { return d3.max(c.points, function(v) { return v[2]; }); });
+        var yMin = (typeof self.options.min !== 'undefined') ? self.options.min : d3.min(self.data, function(c) { return d3.min(c.points, function(v) { return d3.min(v.slice(2)); }); });
+        var yMax = (typeof self.options.max !== 'undefined') ? self.options.max : d3.max(self.data, function(c) { return d3.max(c.points, function(v) { return d3.max(v.slice(2)); }); });
         self.y.domain([yMin, yMax]);
 
         self.color.domain(self.colorDomain || self.data.map(function(d) { return d.name }));
@@ -212,18 +216,23 @@ function TSG(container, options) {
         if (self.x) self.svg.select('g').selectAll(".zline").attr("d", zero_line(self.x.domain()))
         
         // Elements
-        var elem = self.svg.select('g').selectAll(".line").data(self.data);
-
-        elem.enter().append("path").attr("class", "line")
-        elem.exit().remove();
-        
-        elem.attr("d", function(d) { return line(d.points); })
-        .style("stroke", function(d) { return self.color(d.name); });
+        for (var i = 2; i < d3.max(self.data, function(c) { return c.points[0].length}); i++)  {
+          var elem = self.svg.select('g').selectAll(".line#n" + i).data(self.data);
+          elem.enter().append("path").attr("class", "line").attr("id",'n'+i);
+          elem.exit().remove();
+          var line = createLine(i)
+          elem.attr("d", function(d) { return line(d.points); })
+          .style("stroke", function(d) { return self.color(d.name); });
+        }
     }
     
     // TSG API: Clear graphic
     self.clear = function() {
-      self.data = [{ name: '', points: [[0,0,0]]}];
+      var zdata = []
+      for (i in (self.data && d3.max(self.data, function(c) { return c.points[0]}))) {
+        zdata.push(0)
+      }
+      self.data = [{ name: '', points: [zdata]}];
       self.update();
     }
 
@@ -243,12 +252,12 @@ function TSG(container, options) {
     }
 
     // Вспомогательная функция — суммирует данные из массивов points
-    self.sumPoints = function(a) {
+    self.sumPoints = function(a, column) {
           var l = a.length, s;
           if (l) {
             var b = a[0].points.map(function(d,index) {
               var s = 0;
-              for(var i = 0;i<l;i++) if (typeof a[i].points[index][2] !== undefined ) s += a[i].points[index][2];
+              for(var i = 0;i<l;i++) if (typeof a[i].points[index][a[i].columns.indexOf(column)] !== undefined ) s += a[i].points[index][a[i].columns.indexOf(column)];
               return [d[0],0,s];
             })
             return b;
