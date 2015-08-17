@@ -253,7 +253,10 @@ function TSG(container, options) {
           if (l) {
             var b = a[0].points.map(function(d,index) {
               var s = 0;
-              for(var i = 0;i<l;i++) if (typeof a[i].points[index][a[i].columns.indexOf(column)] !== undefined ) s += a[i].points[index][a[i].columns.indexOf(column)];
+              for(var i = 0;i<l;i++) {
+                var idx = a[i].columns.indexOf(column);
+                if (typeof a[i].points[index][idx] !== undefined ) s += a[i].points[index][idx];
+              }
               return [d[0],0,s];
             })
             return b;
