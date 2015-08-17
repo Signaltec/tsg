@@ -28,7 +28,7 @@ function TSG(container, options) {
         self.svg.select(".y.axis").call(self.yAxis);
         for (var i = 2; i < (self.data && d3.max(self.data, function(c) { return c.points[0].length})); i++)  {
           var line = createLine(i)
-          self.svg.selectAll(".line#n" + i).attr("d", function(d) { return line(d.points); })
+          self.svg.selectAll(".line#n" + i).attr("d", function(d) { return (d.points[0][i]) ? line(d.points) : null; })
         }
         self.svg.selectAll(".zline").attr("d", zero_line(self.x.domain()));
     }
@@ -217,23 +217,19 @@ function TSG(container, options) {
         
         // Elements
         for (var i = 2; i < d3.max(self.data, function(c) { return c.points[0].length}); i++)  {
+          //console.log(d3.max(self.data, function(c) { return c.points[0].length}))
           var elem = self.svg.select('g').selectAll(".line#n" + i).data(self.data);
           elem.enter().append("path").attr("class", "line").attr("id",'n'+i);
           elem.exit().remove();
           var line = createLine(i)
-          elem.attr("d", function(d) { return line(d.points); })
-          .style("stroke", function(d) { return self.color(d.name); });
+          elem.attr("d", function(d) { return (d.points[0][i]) ? line(d.points) : null; })
+          elem.style("stroke", function(d) { return self.color(d.name); });
         }
     }
     
     // TSG API: Clear graphic
     self.clear = function() {
-      var zdata = []
-      for (i in (self.data && d3.max(self.data, function(c) { return c.points[0]}))) {
-        zdata.push(0)
-      }
-      self.data = [{ name: '', points: [zdata]}];
-      self.update();
+      self.svg.select('g').selectAll(".line").attr("d", function(d){return null})
     }
 
     
